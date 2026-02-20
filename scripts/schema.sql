@@ -7,10 +7,10 @@ CREATE TYPE profile_role AS ENUM ('agent', 'client');
 CREATE TABLE public.profiles
 (
     id         UUID PRIMARY KEY REFERENCES auth.users (id) ON DELETE CASCADE,
-    role       profile_role   NOT NULL DEFAULT 'client',
-    firstname  TEXT        NOT NULL DEFAULT '',
-    lastname   TEXT        NOT NULL DEFAULT '',
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    role       profile_role NOT NULL DEFAULT 'client',
+    firstname  TEXT         NOT NULL DEFAULT '',
+    lastname   TEXT         NOT NULL DEFAULT '',
+    created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE public.properties
@@ -35,7 +35,7 @@ RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
 INSERT INTO public.profiles (id, role, firstname, lastname)
 VALUES (NEW.id,
-        COALESCE((NEW.raw_user_meta_data ->>'role')::profile_role, 'client'),
+        COALESCE((NEW.raw_user_meta_data ->>'role') ::profile_role, 'client'),
         COALESCE(NEW.raw_user_meta_data ->>'firstname', ''),
         COALESCE(NEW.raw_user_meta_data ->>'lastname', ''));
 RETURN NEW;
@@ -65,12 +65,12 @@ $$;
 
 -- PROFILES : chaque utilisateur accède uniquement à son propre profil
 CREATE
-POLICY "profiles_select_own" ON public.profiles
+POLICY "profiles_select_own" ON public.profiles to authenticated
   FOR
 SELECT USING (auth.uid() = id);
 
 CREATE
-POLICY "profiles_update_own" ON public.profiles
+POLICY "profiles_update_own" ON public.profiles to authenticated
   FOR
 UPDATE USING (auth.uid() = id)
 WITH CHECK (auth.uid() = id);
@@ -82,21 +82,21 @@ POLICY "profiles_no_insert" ON public.profiles
 
 -- PROPERTIES : clients voient les publiés, agents voient les leurs
 CREATE
-POLICY "properties_select" ON public.properties
+POLICY "properties_select" ON public.properties to authenticated
   FOR
 SELECT USING (is_published = TRUE OR agent_id = auth.uid());
 
 -- Seuls les agents peuvent créer/modifier/supprimer leurs biens
 CREATE
-POLICY "properties_insert" ON public.properties
+POLICY "properties_insert" ON public.properties to authenticated
   FOR INSERT WITH CHECK (get_profile_role() = 'agent' AND agent_id = auth.uid());
 
 CREATE
-POLICY "properties_update" ON public.properties
+POLICY "properties_update" ON public.properties to authenticated
   FOR
 UPDATE USING (get_profile_role() = 'agent' AND agent_id = auth.uid());
 
 CREATE
-POLICY "properties_delete" ON public.properties
+POLICY "properties_delete" ON public.properties to authenticated
   FOR DELETE
 USING (get_profile_role() = 'agent' AND agent_id = auth.uid());
