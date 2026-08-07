@@ -9,6 +9,11 @@ export const IDENTITIES = {
   client: '44444444-4444-4444-4444-444444444444',
 } as const
 
+export const PROPERTIES = {
+  published: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+  draft: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+} as const
+
 const ROLES = { anon: 'anon', authenticated: 'authenticated', service: 'service_role' } as const
 export type TestRole = keyof typeof ROLES
 
