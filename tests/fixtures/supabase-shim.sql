@@ -18,3 +18,13 @@ $$;
 
 grant usage on schema auth to anon, authenticated, service_role;
 grant execute on function auth.uid() to anon, authenticated, service_role;
+
+-- Reproduces the Supabase platform bootstrap, not a project choice: on real
+-- Supabase these three statements run at provisioning, before any table
+-- exists. In production RLS is the only barrier on public tables, so the
+-- harness must grant the same table privileges or a missing policy would
+-- pass a test for the wrong reason (permission denied instead of RLS denial).
+grant usage on schema public to anon, authenticated, service_role;
+grant all on all tables in schema public to anon, authenticated, service_role;
+alter default privileges in schema public
+  grant all on tables to anon, authenticated, service_role;
