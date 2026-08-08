@@ -52,3 +52,21 @@ language sql stable security definer set search_path = '' as $$
 $$;
 revoke execute on function get_profile_role() from public;
 grant execute on function get_profile_role() to authenticated;
+
+alter table profiles enable row level security;
+alter table properties enable row level security;
+
+grant usage on schema public to anon, authenticated;
+grant select on profiles to authenticated;
+grant select on properties to anon, authenticated;
+
+create policy profiles_read_self on profiles for select to authenticated
+  using (id = auth.uid());
+
+-- Two policies rather than one: anon has no execute privilege on the
+-- authorization functions, and has no reason to pay for calling them.
+create policy properties_read_public on properties for select to anon
+  using (is_published);
+
+create policy properties_read_agent on properties for select to authenticated
+  using (is_published or agent_id = auth.uid());
