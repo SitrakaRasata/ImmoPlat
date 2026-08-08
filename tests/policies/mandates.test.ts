@@ -34,7 +34,7 @@ describe('mandate delegation', () => {
 		});
 	});
 
-	it('closes access once the mandate has expired, with the row still there', async () => {
+	it('closes access once the mandate has expired', async () => {
 		await db.transaction(async (tx) => {
 			await tx.query(`update property_mandates set expires_at = now() - interval '1 day'`);
 			await as(tx, 'authenticated', IDENTITIES.delegate);

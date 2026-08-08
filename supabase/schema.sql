@@ -68,6 +68,8 @@ grant usage on schema public to anon, authenticated;
 -- matching policy yet.
 revoke all on profiles from anon, authenticated;
 grant select on profiles to authenticated;
+
+revoke all on properties from anon;
 grant select on properties to anon, authenticated;
 
 create policy profiles_read_self on profiles for select to authenticated
