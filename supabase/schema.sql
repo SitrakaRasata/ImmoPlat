@@ -116,3 +116,25 @@ create policy mandates_delete on property_mandates for delete to authenticated
 
 create policy properties_read_agent on properties for select to authenticated
   using (is_published or agent_id = auth.uid() or has_active_mandate(id));
+
+grant insert, delete on properties to authenticated;
+
+-- The platform bootstrap (see supabase-shim.sql) already grants UPDATE on
+-- every column to authenticated via ALTER DEFAULT PRIVILEGES, so the column
+-- GRANT below adds nothing on its own: it must be preceded by this REVOKE to
+-- take the broad privilege away first. agent_id is granted to nobody. WITH
+-- CHECK only sees the row after the update, so it cannot express "agent_id
+-- did not change" — without this column restriction a delegate reassigns the
+-- property to themselves and WITH CHECK still passes.
+revoke update on properties from authenticated;
+grant update (title, description, price, city, is_published) on properties to authenticated;
+
+create policy properties_insert_own on properties for insert to authenticated
+  with check (agent_id = auth.uid() and get_profile_role() = 'agent');
+
+create policy properties_update on properties for update to authenticated
+  using (agent_id = auth.uid() or has_active_mandate(id))
+  with check (agent_id = auth.uid() or has_active_mandate(id));
+
+create policy properties_delete_own on properties for delete to authenticated
+  using (agent_id = auth.uid());
