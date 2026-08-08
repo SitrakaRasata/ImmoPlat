@@ -34,12 +34,23 @@ describe('authorization matrix', () => {
 	afterAll(async () => { await db.close(); });
 
 	// A denial shows up either as a privilege exception or as zero rows
-	// touched when a policy filters silently. Both count as "denied".
+	// touched when a policy filters silently. Both count as "denied", but only
+	// a genuine privilege/RLS error (SQLSTATE 42501) may be read that way — a
+	// broken probe (bad SQL, a renamed column) must fail the test, not read
+	// as a denial.
+	const isAccessDenied = (error: unknown): boolean =>
+		typeof error === 'object' && error !== null && 'code' in error && error.code === '42501';
+
 	const run = async (row: Row, fn: (tx: Transaction) => Promise<number>) => {
 		let count = 0;
 		await db.transaction(async (tx) => {
 			await as(tx, row.role, row.uid);
-			try { count = await fn(tx); } catch { count = 0; }
+			try {
+				count = await fn(tx);
+			} catch (error) {
+				if (!isAccessDenied(error)) throw error;
+				count = 0;
+			}
 			await tx.rollback();
 		});
 		return count > 0;

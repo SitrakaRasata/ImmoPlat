@@ -42,8 +42,68 @@ describe('mandate delegation', () => {
 			expect(rows.map((r) => r.title)).toEqual(['Published loft']);
 			await tx.rollback();
 		});
-		const { rows } = await db.query('select 1 from property_mandates');
-		expect(rows).toHaveLength(1);
+	});
+
+	it('lets the owner grant a mandate on their own property', async () => {
+		await db.transaction(async (tx) => {
+			await as(tx, 'authenticated', IDENTITIES.owner);
+			const { affectedRows } = await tx.query(
+				`insert into property_mandates (property_id, agent_id) values ($1, $2)`,
+				[PROPERTIES.published, IDENTITIES.outsider],
+			);
+			expect(affectedRows).toBe(1);
+			await tx.rollback();
+		});
+	});
+
+	it('lets the owner revoke a mandate that the delegate themselves cannot', async () => {
+		// The delegate can see this mandate through mandates_read (agent_id =
+		// auth.uid()), so a check against an outsider who cannot see the row at
+		// all would pass without ever exercising mandates_delete: DELETE also
+		// requires the row to be visible under the table's SELECT policy, so an
+		// invisible row reads as "denied" regardless of what mandates_delete says.
+		await db.transaction(async (tx) => {
+			await as(tx, 'authenticated', IDENTITIES.delegate);
+			const { affectedRows } = await tx.query(
+				`delete from property_mandates where property_id = $1 and agent_id = $2`,
+				[PROPERTIES.draft, IDENTITIES.delegate],
+			);
+			expect(affectedRows).toBe(0);
+			await tx.rollback();
+		});
+		await db.transaction(async (tx) => {
+			await as(tx, 'authenticated', IDENTITIES.owner);
+			const { affectedRows } = await tx.query(
+				`delete from property_mandates where property_id = $1 and agent_id = $2`,
+				[PROPERTIES.draft, IDENTITIES.delegate],
+			);
+			expect(affectedRows).toBe(1);
+			await tx.rollback();
+		});
+	});
+
+	it('refuses to let a delegate extend their own mandate expiration', async () => {
+		await db.transaction(async (tx) => {
+			await as(tx, 'authenticated', IDENTITIES.delegate);
+			await expect(
+				tx.query(
+					`update property_mandates set expires_at = now() + interval '10 years' where agent_id = $1`,
+					[IDENTITIES.delegate],
+				),
+			).rejects.toThrow(/permission denied/i);
+			await tx.rollback();
+		});
+		// Positive control: writes to property_mandates are not blanket-denied —
+		// the owner can still grant a fresh mandate in the same run.
+		await db.transaction(async (tx) => {
+			await as(tx, 'authenticated', IDENTITIES.owner);
+			const { affectedRows } = await tx.query(
+				`insert into property_mandates (property_id, agent_id) values ($1, $2)`,
+				[PROPERTIES.published, IDENTITIES.client],
+			);
+			expect(affectedRows).toBe(1);
+			await tx.rollback();
+		});
 	});
 
 	it('refuses to let one agent grant a mandate on another agent property', async () => {

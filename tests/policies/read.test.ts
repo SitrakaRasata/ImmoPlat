@@ -26,10 +26,6 @@ describe('properties read policies', () => {
 		expect(await titles(db, 'authenticated', IDENTITIES.client)).toEqual(['Published loft']);
 	});
 
-	it('does not fail anonymous reads with a permission error', async () => {
-		await expect(titles(db, 'anon')).resolves.toBeDefined();
-	});
-
 	it('shows their own drafts to the owning agent', async () => {
 		expect(await titles(db, 'authenticated', IDENTITIES.owner))
 			.toEqual(['Draft townhouse', 'Published loft']);

@@ -57,6 +57,16 @@ alter table profiles enable row level security;
 alter table properties enable row level security;
 
 grant usage on schema public to anon, authenticated;
+
+-- profiles is the third table with the same inert-grant hazard audited on
+-- properties and property_mandates below: the bootstrap's ALTER DEFAULT
+-- PRIVILEGES already grants anon and authenticated every privilege here, so a
+-- narrow GRANT without a preceding REVOKE would restrict nothing. Currently
+-- harmless — no INSERT/UPDATE/DELETE policy exists for either role, so RLS
+-- default-denies those commands regardless — but the REVOKE keeps that true
+-- by construction rather than by the accident of no one having written a
+-- matching policy yet.
+revoke all on profiles from anon, authenticated;
 grant select on profiles to authenticated;
 grant select on properties to anon, authenticated;
 
@@ -85,7 +95,9 @@ create table property_mandates (
 -- search_path is set to empty, not to public, for the same CVE-2018-1058
 -- reason as handle_new_user() and get_profile_role() above: pg_temp is
 -- searched first for unqualified names regardless of search_path, so every
--- name below is schema-qualified.
+-- relation and type name below is schema-qualified. Built-in functions like
+-- now() are not: pg_catalog is always searched implicitly and pg_temp cannot
+-- shadow it for functions, so an unqualified now() carries no such risk.
 create function has_active_mandate(p_property uuid) returns boolean
 language sql stable security definer set search_path = '' as $$
   select exists (
@@ -105,6 +117,13 @@ revoke execute on function owns_property(uuid) from public;
 grant execute on function owns_property(uuid) to authenticated;
 
 alter table property_mandates enable row level security;
+
+-- Same inert-grant hazard as the properties UPDATE case above: property_mandates
+-- is created after the platform bootstrap's ALTER DEFAULT PRIVILEGES, so anon
+-- and authenticated already hold every privilege on it, UPDATE included, even
+-- though no UPDATE policy is ever defined below. The REVOKE makes the GRANT
+-- list below authoritative instead of redundant.
+revoke all on property_mandates from anon, authenticated;
 grant select, insert, delete on property_mandates to authenticated;
 
 create policy mandates_read on property_mandates for select to authenticated
@@ -120,13 +139,14 @@ create policy properties_read_agent on properties for select to authenticated
 grant insert, delete on properties to authenticated;
 
 -- The platform bootstrap (see supabase-shim.sql) already grants UPDATE on
--- every column to authenticated via ALTER DEFAULT PRIVILEGES, so the column
--- GRANT below adds nothing on its own: it must be preceded by this REVOKE to
--- take the broad privilege away first. agent_id is granted to nobody. WITH
--- CHECK only sees the row after the update, so it cannot express "agent_id
--- did not change" — without this column restriction a delegate reassigns the
--- property to themselves and WITH CHECK still passes.
-revoke update on properties from authenticated;
+-- every column to anon and authenticated via ALTER DEFAULT PRIVILEGES, so the
+-- column GRANT below adds nothing on its own: it must be preceded by this
+-- REVOKE, covering both roles, to take the broad privilege away first.
+-- agent_id is granted to nobody. WITH CHECK only sees the row after the
+-- update, so it cannot express "agent_id did not change" — without this
+-- column restriction a delegate reassigns the property to themselves and
+-- WITH CHECK still passes.
+revoke update on properties from anon, authenticated;
 grant update (title, description, price, city, is_published) on properties to authenticated;
 
 create policy properties_insert_own on properties for insert to authenticated
