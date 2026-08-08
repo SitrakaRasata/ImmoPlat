@@ -15,3 +15,6 @@ insert into properties (id, agent_id, title, city, price, is_published) values
    'Published loft', 'Lyon', 320000, true),
   ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '11111111-1111-1111-1111-111111111111',
    'Draft townhouse', 'Lyon', 480000, false);
+
+insert into property_mandates (property_id, agent_id) values
+  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '22222222-2222-2222-2222-222222222222');
