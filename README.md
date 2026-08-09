@@ -3,6 +3,9 @@
 A property listing platform whose subject is **declarative authorization**: every access
 rule lives in the Postgres schema, none of it is reimplemented in the application.
 
+**[Live demo](https://immo-grant.vercel.app)** — signed out, the catalogue lists published
+properties and nothing else. That is the policy answering, not a filter in the page.
+
 The interesting case is not "I can see what I own" — that is the textbook example and it
 proves nothing. It is **delegation**: an agent may be granted a mandate on a listing they do
 not own, and that mandate expires on its own, without any row changing.
@@ -96,8 +99,5 @@ skip rather than a failure when `.env` is not filled in — a skip that names wh
 so it is never mistaken for a check that passed.
 
 `.env.example` lists every variable, including the three that only the seeder and the
-end-to-end test read.
-
-There is no public demo: a live instance would mean a Supabase project standing indefinitely,
-and what this project has to show is a schema and the matrix that proves it. `pnpm test` reads
-both without deploying anything.
+end-to-end test read. Only the two `PUBLIC_` ones reach the deployment; the service-role key
+belongs to the seeder and never leaves a local machine.
