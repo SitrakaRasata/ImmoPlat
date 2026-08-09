@@ -17,7 +17,7 @@
 	"devDependencies": {
 		"@electric-sql/pglite": "0.5.4",
 		"@playwright/test": "1.62.1",
-		"@sveltejs/adapter-auto": "7.0.1",
+		"@sveltejs/adapter-vercel": "6.3.4",
 		"@sveltejs/kit": "2.70.2",
 		"@sveltejs/vite-plugin-svelte": "7.2.0",
 		"@tailwindcss/vite": "4.3.3",
