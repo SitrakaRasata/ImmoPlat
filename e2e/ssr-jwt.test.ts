@@ -1,10 +1,12 @@
 import { expect, test } from '@playwright/test';
 
+import { isConfigured } from './configured';
+
 const EMAIL = process.env.SEED_EMAIL ?? 'owner@example.test';
 const PASSWORD = process.env.SEED_PASSWORD ?? '';
 
 test('the owner draft is present in the server-rendered markup', async ({ page, request }) => {
-	test.skip(PASSWORD === '', 'SEED_PASSWORD is required to run the end-to-end leg');
+	test.skip(!isConfigured(), 'a configured Supabase project and SEED_PASSWORD run this leg');
 
 	await page.goto('/login');
 	await page.fill('input[name="email"]', EMAIL);

@@ -70,10 +70,14 @@ dashboard's SQL editor, then fill in `.env` (see `.env.example` for the shape) a
 pnpm install
 pnpm test                  # the policy matrix, no external service needed
 pnpm run dev
+pnpm test:e2e              # the SSR leg, only with a configured Supabase project
 ```
 
-`pnpm test` always runs the full matrix above against in-process PGlite. The end-to-end
-test in `e2e/` and the seeder in `scripts/` are the only two things that talk to a real
-Supabase project; both skip, rather than fail, when `.env` is not filled in.
+`pnpm test` always runs the full matrix above against in-process PGlite, so the green it
+reports is complete on its own terms. The end-to-end test in `e2e/` and the seeder in
+`scripts/` are the only two things that talk to a real Supabase project, and both report a
+skip rather than a failure when `.env` is not filled in — a skip that names what is missing,
+so it is never mistaken for a check that passed.
 
-`.env.example` lists the variables the application needs.
+`.env.example` lists every variable, including the three that only the seeder and the
+end-to-end test read.

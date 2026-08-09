@@ -30,10 +30,18 @@ def main() -> int:
     key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
     password = os.environ.get("SEED_PASSWORD")
     if not url or not key or not password:
-        print("PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY and SEED_PASSWORD are required")
-        return 1
+        print(
+            "skipping: PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY and SEED_PASSWORD "
+            "are not set"
+        )
+        return 0
 
     db = create_client(url, key)
+
+    # Seeding twice would raise on the first duplicate email, halfway through the accounts.
+    if db.table("properties").select("id").limit(1).execute().data:
+        print("skipping: the project already holds listings")
+        return 0
 
     ids = {}
     for email, firstname, role in AGENTS:
