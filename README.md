@@ -74,6 +74,12 @@ when the project already holds listings rather than failing halfway through the 
 - PGlite is a single-connection WebAssembly build. Nothing in the matrix exercises
   concurrency, but it is a difference from production and it is stated rather than hidden.
 
+## Stack
+
+SvelteKit 2 (Svelte 5 runes, server load functions) · TypeScript · Supabase — Postgres, Auth
+and Row Level Security · Tailwind CSS · Vitest against in-process PGlite · Playwright · Python
+for the seeder
+
 ## Running it
 
 ```bash
