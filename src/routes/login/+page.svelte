@@ -3,7 +3,7 @@
 </script>
 
 <h1 class="mb-6 text-2xl font-semibold">Sign in</h1>
-<form method="post" class="max-w-sm space-y-4">
+<form method="post" action="?/login" class="max-w-sm space-y-4">
 	<label class="block">
 		<span class="text-sm">Email</span>
 		<input name="email" type="email" required value={form?.email ?? ''}

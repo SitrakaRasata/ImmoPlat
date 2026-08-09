@@ -2,7 +2,9 @@ import { fail, redirect } from '@sveltejs/kit';
 import type { Actions } from './$types';
 
 export const actions: Actions = {
-	default: async ({ request, locals }) => {
+	// SvelteKit forbids a default action next to named ones, so signing in is
+	// itself named — signout below already had to be.
+	login: async ({ request, locals }) => {
 		const form = await request.formData();
 		const email = String(form.get('email') ?? '');
 		const password = String(form.get('password') ?? '');
