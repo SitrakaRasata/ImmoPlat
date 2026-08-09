@@ -22,12 +22,21 @@
 		<input name="is_published" type="checkbox" checked={data.property.is_published} />
 		<span class="text-sm">Published</span>
 	</label>
-	{#if form?.message}<p class="text-sm text-red-600">{form.message}</p>{/if}
+	{#if form?.action === 'save' && form.message}
+		<p role="alert" class="text-sm text-red-600">{form.message}</p>
+	{:else if form?.action === 'save' && form.success}
+		<p class="text-sm text-green-700">Saved.</p>
+	{/if}
 	<button type="submit" class="rounded bg-black px-4 py-2 text-white">Save</button>
 </form>
 
 {#if data.isOwner}
 	<h2 class="mt-10 mb-4 text-xl font-semibold">Mandates</h2>
+	{#if form?.action === 'revoke' && form.message}
+		<p role="alert" class="mb-2 text-sm text-red-600">{form.message}</p>
+	{:else if form?.action === 'revoke' && form.success}
+		<p class="mb-2 text-sm text-green-700">Mandate revoked.</p>
+	{/if}
 	<ul class="mb-4 space-y-2">
 		{#each data.mandates as mandate (mandate.agent_id)}
 			<li class="flex items-center gap-3 rounded border p-3">
@@ -56,4 +65,9 @@
 		</label>
 		<button type="submit" class="rounded bg-black px-4 py-2 text-white">Delegate</button>
 	</form>
+	{#if form?.action === 'delegate' && form.message}
+		<p role="alert" class="mt-2 text-sm text-red-600">{form.message}</p>
+	{:else if form?.action === 'delegate' && form.success}
+		<p class="mt-2 text-sm text-green-700">Mandate added.</p>
+	{/if}
 {/if}

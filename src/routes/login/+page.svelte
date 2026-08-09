@@ -14,6 +14,6 @@
 		<input name="password" type="password" required
 			class="mt-1 w-full rounded border px-3 py-2" />
 	</label>
-	{#if form?.message}<p class="text-sm text-red-600">{form.message}</p>{/if}
+	{#if form?.message}<p role="alert" class="text-sm text-red-600">{form.message}</p>{/if}
 	<button type="submit" class="rounded bg-black px-4 py-2 text-white">Sign in</button>
 </form>

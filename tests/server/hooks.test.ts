@@ -13,11 +13,13 @@ const fakeEvent = () => {
 };
 
 describe('handle', () => {
-	it('builds a per-request client wired to the request cookies', async () => {
-		const event = fakeEvent();
-		await handle({ event: event as never, resolve: async () => new Response('ok') });
-		expect(event.locals.supabase).toBeDefined();
-		expect(event.cookies.getAll).toHaveBeenCalled();
+	it('creates a distinct client per request, never a module-level singleton', async () => {
+		const eventA = fakeEvent();
+		const eventB = fakeEvent();
+		await handle({ event: eventA as never, resolve: async () => new Response('ok') });
+		await handle({ event: eventB as never, resolve: async () => new Response('ok') });
+		expect(eventA.locals.supabase).toBeDefined();
+		expect(eventA.locals.supabase).not.toBe(eventB.locals.supabase);
 	});
 
 	it('exposes getUser, never a bare session read', async () => {

@@ -7,6 +7,7 @@
 	{#each data.properties as property (property.id)}
 		<li class="rounded border p-4">
 			<a href="/properties/{property.id}" class="font-medium">{property.title}</a>
+			{#if !property.is_published}<span class="ml-2 text-sm text-amber-700">Draft</span>{/if}
 			<p class="text-sm text-gray-600">{property.city} — {property.price} €</p>
 		</li>
 	{:else}
