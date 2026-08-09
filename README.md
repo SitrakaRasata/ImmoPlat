@@ -50,9 +50,19 @@ decides which rows, `GRANT` decides which columns and which operations.**
 case that justifies it: no user exists yet, so there is no JWT to act under. It runs
 offline, never in response to an incoming request, and its key never reaches a browser.
 
-To run it against a fresh Supabase project: apply `supabase/schema.sql` through the
-dashboard's SQL editor, then fill in `.env` (see `.env.example` for the shape) and run
-`pip install -r scripts/requirements.txt && python scripts/seed.py`.
+To run it against a fresh Supabase project, apply `supabase/schema.sql` through the
+dashboard's SQL editor, fill in `.env` (see `.env.example` for the shape), then:
+
+```bash
+python -m venv .venv
+. .venv/bin/activate                        # .venv\Scripts\activate on Windows
+pip install -r scripts/requirements.txt
+python scripts/seed.py
+```
+
+The virtual environment is not optional politeness: recent Python installations refuse to
+install into the system environment at all. Running the seeder twice is harmless — it stops
+when the project already holds listings rather than failing halfway through the accounts.
 
 ## What is not tested, and why
 
