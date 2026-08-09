@@ -17,9 +17,25 @@ AGENTS = [
     ("client@example.test", "Camille", "client"),
 ]
 
+OWNER, DELEGATE, OUTSIDER = (
+    "owner@example.test",
+    "delegate@example.test",
+    "outsider@example.test",
+)
+
 LISTINGS = [
-    ("Published loft", "Lyon", 320000, True),
-    ("Draft townhouse", "Lyon", 480000, False),
+    (OWNER, "Published loft", "Lyon", 320000, True, "Converted print works, exposed beams, one bedroom on a mezzanine."),
+    (OWNER, "Draft townhouse", "Lyon", 480000, False, "Four bedrooms over three floors, walled garden. Awaiting the owner's photographs."),
+    (OWNER, "Canal-side studio", "Lille", 148000, True, "Twenty-eight square metres facing the water, top floor, no lift."),
+    (OWNER, "Vineyard cottage", "Bordeaux", 265000, True, "Two bedrooms and a stone outbuilding, fifteen minutes from Saint-Émilion."),
+    (OWNER, "Corner shop with flat above", "Nantes", 392000, True, "Ground-floor retail let until 2029, two-bedroom flat above it, sold together."),
+    (OWNER, "Post-war house to modernise", "Le Mans", 174000, True, "Sound roof and structure, everything else dates from 1978."),
+    (DELEGATE, "Riverside duplex", "Toulouse", 415000, True, "Two floors, terrace over the Garonne, parking in the basement."),
+    (DELEGATE, "Attic conversion", "Strasbourg", 231000, True, "Sixty-two square metres under the eaves, cathedral view from the study."),
+    (DELEGATE, "Fisherman's house", "Rennes", 289000, True, "Three bedrooms, courtyard, a five-minute walk from the covered market."),
+    (OUTSIDER, "Hillside villa", "Nice", 875000, True, "Sea view from every room, pool, olive terraces below the house."),
+    (OUTSIDER, "Old bakery", "Montpellier", 356000, True, "Oven and shopfront kept, living space behind, zoned for mixed use."),
+    (OUTSIDER, "Two-bedroom flat", "Marseille", 198000, True, "Third floor, balcony facing south, communal roof terrace."),
 ]
 
 
@@ -38,13 +54,16 @@ def main() -> int:
 
     db = create_client(url, key)
 
-    # Seeding twice would raise on the first duplicate email, halfway through the accounts.
-    if db.table("properties").select("id").limit(1).execute().data:
-        print("skipping: the project already holds listings")
-        return 0
+    # Creating an account that already exists raises on the duplicate email, so a second
+    # run reuses what is there and only writes what is missing.
+    known = {user.email: user.id for user in db.auth.admin.list_users()}
 
     ids = {}
+    created_accounts = 0
     for email, firstname, role in AGENTS:
+        if email in known:
+            ids[email] = known[email]
+            continue
         created = db.auth.admin.create_user(
             {
                 "email": email,
@@ -54,24 +73,52 @@ def main() -> int:
             }
         )
         ids[email] = created.user.id
+        created_accounts += 1
         # The signup trigger always writes 'client'; promotion is a separate,
         # privileged decision and this script is where it happens.
         if role == "agent":
             db.table("profiles").update({"role": "agent"}).eq("id", created.user.id).execute()
 
-    owner = ids["owner@example.test"]
+    seeded = {row["title"] for row in db.table("properties").select("title").execute().data}
     rows = [
-        {"agent_id": owner, "title": t, "city": c, "price": p, "is_published": pub}
-        for t, c, p, pub in LISTINGS
+        {
+            "agent_id": ids[agent],
+            "title": title,
+            "city": city,
+            "price": price,
+            "is_published": published,
+            "description": description,
+        }
+        for agent, title, city, price, published, description in LISTINGS
+        if title not in seeded
     ]
-    inserted = db.table("properties").insert(rows).execute()
+    if rows:
+        db.table("properties").insert(rows).execute()
 
-    draft = next(r for r in inserted.data if not r["is_published"])
-    db.table("property_mandates").insert(
-        {"property_id": draft["id"], "agent_id": ids["delegate@example.test"]}
-    ).execute()
+    draft = (
+        db.table("properties")
+        .select("id")
+        .eq("is_published", False)
+        .limit(1)
+        .execute()
+        .data[0]
+    )
+    mandates = (
+        db.table("property_mandates")
+        .select("property_id")
+        .eq("property_id", draft["id"])
+        .execute()
+        .data
+    )
+    if not mandates:
+        db.table("property_mandates").insert(
+            {"property_id": draft["id"], "agent_id": ids[DELEGATE]}
+        ).execute()
 
-    print(f"seeded {len(ids)} accounts, {len(rows)} listings, 1 mandate")
+    print(
+        f"seeded {created_accounts} accounts, {len(rows)} listings, "
+        f"{0 if mandates else 1} mandate"
+    )
     return 0
 
 

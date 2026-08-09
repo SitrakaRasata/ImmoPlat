@@ -64,8 +64,14 @@ python scripts/seed.py
 ```
 
 The virtual environment is not optional politeness: recent Python installations refuse to
-install into the system environment at all. Running the seeder twice is harmless — it stops
-when the project already holds listings rather than failing halfway through the accounts.
+install into the system environment at all. Running the seeder twice is harmless: it reuses the
+accounts that already exist and inserts only the listings that are missing, instead of failing
+halfway through on a duplicate email.
+
+The demo accounts are deliberately not published here. Signed out, the demo shows the one face
+of the policy that needs no identity — the catalogue of published listings. The other five rows
+of the matrix above are proved by `tests/policies/matrix.test.ts`, which needs no deployment to
+run and states its result more precisely than a session ever could.
 
 ## What is not tested, and why
 
