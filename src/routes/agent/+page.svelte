@@ -19,6 +19,7 @@
 	{#each data.delegated as property (property.id)}
 		<li class="rounded border p-4">
 			<a href="/agent/properties/{property.id}">{property.title}</a>
+			{#if !property.is_published}<span class="ml-2 text-sm text-amber-700">Draft</span>{/if}
 		</li>
 	{:else}
 		<li class="text-gray-600">No listing has been delegated to you.</li>

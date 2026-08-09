@@ -17,6 +17,21 @@ describe('agent property actions', () => {
 	beforeAll(async () => { db = await createTestDb(); });
 	afterAll(async () => { await db.close(); });
 
+	it('lets the owner save their own listing', async () => {
+		await db.transaction(async (tx) => {
+			await as(tx, 'authenticated', IDENTITIES.owner);
+			const supabase = createFakeSupabase(tx);
+			const result = await actions.save({
+				params: { id: PROPERTIES.published },
+				request: formRequest({ title: 'Renovated loft', city: 'Lyon', description: '' }),
+				locals: { supabase },
+			} as never);
+
+			expect(result).toEqual({ action: 'save', success: true });
+			await tx.rollback();
+		});
+	});
+
 	it('refuses save when the mandate has expired', async () => {
 		await db.transaction(async (tx) => {
 			await as(tx, 'authenticated', IDENTITIES.owner);
