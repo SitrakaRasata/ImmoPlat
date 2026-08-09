@@ -97,3 +97,7 @@ so it is never mistaken for a check that passed.
 
 `.env.example` lists every variable, including the three that only the seeder and the
 end-to-end test read.
+
+There is no public demo: a live instance would mean a Supabase project standing indefinitely,
+and what this project has to show is a schema and the matrix that proves it. `pnpm test` reads
+both without deploying anything.
